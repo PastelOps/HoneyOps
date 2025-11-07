@@ -597,11 +597,12 @@ Do you want to perform this destroy?  [Use arrows to move, type to filter]
 ## References
 
 - Cowrie: https://github.com/cowrie/cowrie
-- Galah: https://github.com/0x4D31/galah
+- 0x4D31-Galah: https://github.com/0x4D31/galah
 - Pulumi: https://github.com/pulumi/pulumi
-- Viper: https://github.com/spf13/viper
-- Bubbletea: https://github.com/charmbracelet/bubbletea
-- Go-Gota: https://github.com/go-gota/gota/
+- spf13-Viper: https://github.com/spf13/viper
+- charmbracelet-Bubbletea: https://github.com/charmbracelet/bubbletea
+- Go-Gota-gota: https://github.com/go-gota/gota/
+- 411Hall-obscurer: https://github.com/411Hall/obscurer
 
 ## Disclaimer / Legal Notice
 
