@@ -1,0 +1,7 @@
+description "Yara Monitoring for Cowrie"
+start on runlevel [2345]
+stop on shutdown
+
+script
+    sudo /opt/yara/yara_monitor_linux.sh
+end script

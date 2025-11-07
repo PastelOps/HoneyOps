@@ -1,0 +1,21 @@
+package tui
+
+import "github.com/charmbracelet/bubbles/key"
+
+// keyMap defines the keybindings for the app.
+type keyMap struct {
+	reload key.Binding
+	search key.Binding
+}
+
+// defaultKeyMap returns a set of default keybindings.
+func defaultKeyMap() keyMap {
+	return keyMap{
+		reload: key.NewBinding(
+			key.WithKeys("r"),
+		),
+		search: key.NewBinding(
+			key.WithKeys("s"),
+		),
+	}
+}

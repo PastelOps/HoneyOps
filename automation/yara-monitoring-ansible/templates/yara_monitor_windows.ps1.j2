@@ -1,0 +1,24 @@
+# Define variables
+$watchFolder = "C:\Path\To\Monitor"
+$yaraPath = "C:\Path\To\yara.exe"
+$rulesFile = "C:\Path\To\your_rules.yar"
+$logFile = "C:\Path\To\yara_matches.log"
+
+# Create a FileSystemWatcher object
+$watcher = New-Object System.IO.FileSystemWatcher
+$watcher.Path = $watchFolder
+$watcher.Filter = "*.*"
+$watcher.NotifyFilter = [System.IO.NotifyFilters]::FileName
+$watcher.IncludeSubdirectories = $false
+
+# Register the event handler for file creation
+Register-ObjectEvent -InputObject $watcher -EventName Created -Action {
+    $file = $event.SourceEventArgs.FullPath
+    Write-Host "New file detected: $file"
+    Start-Process -FilePath $yaraPath -ArgumentList "$rulesFile", "`"$file`"" -Wait -RedirectStandardOutput $logFile
+}
+
+# Start monitoring
+Write-Host "Monitoring folder: $watchFolder"
+# Keep the script running
+while($true) { Start-Sleep -Seconds 1 }

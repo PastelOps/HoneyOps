@@ -1,0 +1,34 @@
+---
+# Ansible Tasks for Cowrie SSH/Telnet Honeypot
+##############################################
+
+# Available tags:
+# - debug
+# - never
+# - always
+# - update
+# - root      -- this tags require sudo access
+# - docker    -- for use with docker
+
+# Prepare Python virtual environment
+##############################################
+
+- name: Ensure prereq Python packages in Virtual Environment
+  tags: [python]
+  become: true
+  become_user: "{{ cowrie_user }}"
+  pip:
+    name: ['pip>9', 'setuptools>18.5']
+    virtualenv: "{{ cowrie_venv }}"
+    virtualenv_python: "python{{ python_version }}"
+    state: present
+
+- name: Install Cowrie using Virtual Environment
+  tags: [python]
+  become: true
+  become_user: "{{ cowrie_user }}"
+  pip:
+    name: "/opt/cowrie/cowrie"
+    extra_args: "-e"
+    virtualenv: "{{ cowrie_venv }}"
+    state: present

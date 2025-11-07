@@ -1,0 +1,35 @@
+# Initialization file for Yara Monitoring (Cowrie) for systemd
+
+[Unit]
+Description=Yara Monitoring Script
+
+[Service]
+Type=simple
+User=root
+Group=root
+ProtectSystem=true
+ExecStart=/opt/yara/yara_monitor_linux.sh
+PermissionsStartOnly=yes
+Restart=always
+StateDirectory=yara_monitor
+LogsDirectory=yara_monitor
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=yara_monitor
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+##### ideas
+
+[Unit]
+After=rsyslog.service
+
+[Service]
+Restart=always
+RestartSec=5
+
+
+

@@ -1,0 +1,73 @@
+---
+# Ansible Tasks for Cowrie SSH/Telnet Honeypot
+##############################################
+
+# Available tags:
+# - debug
+# - never
+# - always
+# - update
+# - root      -- this tags require sudo access
+# - docker    -- for use with docker
+
+# These tasks need to be executed as root
+##############################################
+
+# Startup for systemd
+
+- name: Install cowrie socket file
+  become: true
+  template:
+    src: cowrie.service.socket.j2
+    dest: /etc/systemd/system/cowrie.socket
+  tags: [startup, root]
+  when: ansible_service_mgr == 'systemd'
+
+- name: Install systemd unit file
+  become: true
+  template:
+    src: cowrie.service.systemd.j2
+    dest: /etc/systemd/system/cowrie.service
+  tags: [startup, root]
+  notify:
+    - reload systemctl
+    - restart cowrie
+  when: ansible_service_mgr == 'systemd'
+
+- name: Enable cowrie service
+  become: true
+  tags: [startup, root]
+  service: name=cowrie enabled=yes
+  when: ansible_service_mgr == 'systemd'
+
+# Startup for upstart
+
+- name: Install upstart unit file
+  become: true
+  tags: [startup, root]
+  template:
+    src: cowrie.conf.upstart.j2
+    dest: /etc/init/cowrie.conf
+  notify:
+    - restart cowrie
+  when: ansible_service_mgr == 'upstart'
+
+- name: Enable cowrie service
+  become: true
+  tags: [startup, root]
+  service: name=cowrie enabled=yes
+  when: ansible_service_mgr == 'upstart'
+
+# Startup for init.d
+
+- name: Install init.d script cowrie
+  become: true
+  tags: [startup, root]
+  template: src=cowrie.service.initd.j2 dest=/etc/init.d/cowrie
+  when: ansible_service_mgr == 'sysvinit'
+
+- name: Make /etc/init.d/cowrie executable
+  become: true
+  tags: [startup, root]
+  file: path=/etc/init.d/cowrie mode=0755
+  when: ansible_service_mgr == 'sysvinit'

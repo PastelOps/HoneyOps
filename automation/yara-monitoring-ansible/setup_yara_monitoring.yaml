@@ -1,0 +1,83 @@
+- hosts: all
+
+  tasks:
+  - name: Copy yara_monitor script
+    tags: [cfg]
+    become: true
+    template:
+        src: templates/yara_monitor_linux.sh.j2
+        dest: "{{ yara_folder }}/yara_monitor_linux.sh"
+        owner: root
+        group: root
+        mode: '0700'
+    vars:
+       
+        cowrie_home: "/opt/cowrie"
+        cowrie_dir: "{{ cowrie_home }}/cowrie"
+        yara_folder: "/opt/yara"
+        watch_dir: "{{ cowrie_dir }}/var/lib/cowrie/downloads/"
+        yara_log: "{{ cowrie_dir }}/var/log/cowrie/yara_matches.log"
+        yara_rules: "{{ yara_folder }}/rules/"
+
+    # Startup for systemd
+
+  - name: Install systemd unit file
+    become: true
+    template:
+      src: yara_monitor.service.systemd.j2
+      dest: /etc/systemd/system/yara_monitor.service
+    tags: [startup, root]
+    notify:
+      - reload systemctl
+      - restart yara_monitor
+    when: ansible_service_mgr == 'systemd'
+    
+  - name: Enable yara_monitor service
+    become: true
+    tags: [startup, root]
+    service: name=yara_monitor enabled=yes state=started
+    when: ansible_service_mgr == 'systemd'
+
+    # Startup for upstart
+
+  - name: Install upstart unit file
+    become: true
+    tags: [startup, root]
+    template:
+      src: yara_monitor.conf.upstart.j2
+      dest: /etc/init/yara_monitor.conf
+    notify:
+      - restart yara_monitor
+    when: ansible_service_mgr == 'upstart'
+
+  - name: Enable yara_monitor service
+    become: true
+    tags: [startup, root]
+    service: name=yara_monitor enabled=yes
+    when: ansible_service_mgr == 'upstart'
+  
+      
+  # Startup for init.d
+
+  - name: Install init.d script yara_monitor
+    become: true
+    tags: [startup, root]
+    template: src=yara_monitor.service.initd.j2 dest=/etc/init.d/yara_monitor
+    when: ansible_service_mgr == 'sysvinit'
+
+  - name: Make /etc/init.d/yara_monitor executable
+    become: true
+    tags: [startup, root]
+    file: path=/etc/init.d/yara_monitor mode=0755
+    when: ansible_service_mgr == 'sysvinit'
+
+  handlers:
+  - name: reload systemctl
+    systemd:
+      daemon_reload: true
+
+  - name: restart yara_monitor
+    service: name=yara_monitor state=restarted
+
+  - name: start yara_monitor
+    service: name=yara_monitor state=started

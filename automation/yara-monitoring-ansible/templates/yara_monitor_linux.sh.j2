@@ -1,0 +1,15 @@
+#!/bin/bash
+
+WATCH_DIR={{ watch_dir }}
+YARA_RULES=$(find {{ yara_rules }} -name "*.yar")
+LOG_FILE={{ yara_log }}
+
+echo "Monitoring directory: $WATCH_DIR"
+inotifywait -m -e create -e moved_to "$WATCH_DIR" |
+while read -r directory event file; do
+  # Make sure the file exists and is not a directory
+  if [[ -f "${directory}${file}" ]]; then
+    echo "New file detected: ${directory}${file}"
+    /usr/local/bin/yara "$YARA_RULES" "${directory}${file}" >> "$LOG_FILE"
+  fi
+done
