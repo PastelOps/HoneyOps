@@ -409,6 +409,7 @@ func (a *AwsPulumiDeployer) SetupGalahLLMPot(ctx *pulumi.Context, ec2Name string
 			"(sudo adduser --disabled-password  --gecos \"\" galah); "+
 				"(sudo usermod -a -G galah galah);"+
 				"(sudo mv galah /opt/galah);"+
+			    "(sudo mkdir /opt/galah/logs);"+
 				"(sudo chown -R galah:galah /opt/galah);"+
 				"(sudo cp /opt/galah/galah.serivce /etc/systemd/system/galah.service);"+
 				"(sudo chmod +x /opt/galah/galah); (echo /opt/galah/galah -p openai -m gpt-4.1-mini --event-log-file /opt/galah/logs/event_log.json --cache-db-file /opt/galah/logs/cache.db --config-file %v --api-key='%v' | sudo tee /opt/galah/execute_galah.sh); (sudo chmod +x /opt/galah/execute_galah.sh); (sudo systemctl start galah);", "/opt/galah/config/config.yaml", a.LLMApiKey,
