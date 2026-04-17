@@ -763,9 +763,9 @@ func (a *AwsPulumiDeployer) GenerateReport(ec2Name string) error {
 			outputFilePath := filepath.Join(userHoneyOpsSysReports, fmt.Sprintf("Cowrie_SummaryReport_%v.md", timestamp))
 
 			markDownReport.WriteString("# Cowrie Summary Report\n\n")
-			markDownReport.WriteString(fmt.Sprint("Campaign Name: %s\n", a.CampaignStack))
-			markDownReport.WriteString(fmt.Sprint("Name of Instance: %s\n", ec2Name))
-			markDownReport.WriteString(fmt.Sprint("HoneyPot IP: %s\n", a.Ec2Config[ec2Name].PublicIpAddress))
+			markDownReport.WriteString(fmt.Sprintf("Campaign Name: %s\n", a.CampaignStack))
+			markDownReport.WriteString(fmt.Sprintf("Name of Instance: %s\n", ec2Name))
+			markDownReport.WriteString(fmt.Sprintf("HoneyPot IP: %s\n", a.Ec2Config[ec2Name].PublicIpAddress))
 			markDownReport.WriteString("\n\n")
 
 			limitRows := 10
