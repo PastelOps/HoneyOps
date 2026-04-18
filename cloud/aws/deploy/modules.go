@@ -409,7 +409,6 @@ func (a *AwsPulumiDeployer) SetupGalahLLMPot(ctx *pulumi.Context, ec2Name string
 			"(sudo adduser --disabled-password  --gecos \"\" galah); "+
 				"(sudo usermod -a -G galah galah);"+
 				"(sudo mv galah /opt/galah);"+
-			    "(sudo mkdir /opt/galah/logs);"+
 				"(sudo chown -R galah:galah /opt/galah);"+
 				"(sudo cp /opt/galah/galah.serivce /etc/systemd/system/galah.service);"+
 				"(sudo chmod +x /opt/galah/galah); (echo /opt/galah/galah -p openai -m gpt-4.1-mini --event-log-file /opt/galah/logs/event_log.json --cache-db-file /opt/galah/logs/cache.db --config-file %v --api-key='%v' | sudo tee /opt/galah/execute_galah.sh); (sudo chmod +x /opt/galah/execute_galah.sh); (sudo systemctl start galah);", "/opt/galah/config/config.yaml", a.LLMApiKey,
@@ -740,12 +739,12 @@ func (a *AwsPulumiDeployer) GenerateReport(ec2Name string) error {
 
 		var (
 			ctx = context.Background()      // context for cancellation
-			tm  = extract.NewTargetMemory() // create a new in-memory filesystem
-			dst = ""                        // root of in-memory filesystem
-			cfg = extract.NewConfig()       // custom config for extraction
+			tm  = extract.NewTargetDisk() // create a new in-memory filesystem
+			dst = filepath.Join(userHomeDirName, ".honeyops", ".tmp")                      // root of in-memory filesystem
+			cfg = extract.NewConfig( extract.WithCreateDestination(true),extract.WithOverwrite(true))       // custom config for extraction
 		)
 
-		file, err := os.Open(ziplog)
+		file, _ := os.Open(ziplog)
 		src := bufio.NewReader(file)
 		// unpack
 		if err := extract.UnpackTo(ctx, tm, dst, src, cfg); err != nil {
@@ -753,10 +752,19 @@ func (a *AwsPulumiDeployer) GenerateReport(ec2Name string) error {
 		}
 
 		// Zip archives can contain multiple .json files
-		matches, err := tm.Glob("*.json")
-		if err != nil {
-			fmt.Sprintf("Glob() failed: ")
+		// Walk the local filesystem
+		localFs := os.DirFS(dst)
+		var matches []string
+		if err := fs.WalkDir(localFs, ".", func(path string, d fs.DirEntry, err error) error {
+		    // process path, d and err
+		    if filepath.Ext(path) == ".json" {
+			matches = append(matches,filepath.Join(dst,path))
+		    }
+		    return nil
+		}); err != nil {
+		    // handle error
 		}
+
 
 		if strings.Contains(strings.ToLower(ziplog), "cowrie") {
 			var markDownReport strings.Builder
@@ -773,12 +781,12 @@ func (a *AwsPulumiDeployer) GenerateReport(ec2Name string) error {
 			var cowrieEvents jsonconv.JsonArray
 
 			for _, element := range matches {
-				content, err := fs.ReadFile(tm, element)
+				file, err := os.Open(element)
 				if err != nil {
 					fmt.Sprintf("ReadFile failed: ")
 				}
 
-				scanner := bufio.NewScanner(strings.NewReader(string(content)))
+				scanner := bufio.NewScanner(file)
 
 				for scanner.Scan() {
 					obj := make(jsonconv.JsonObject)
@@ -1021,14 +1029,17 @@ func (a *AwsPulumiDeployer) GenerateReport(ec2Name string) error {
 			w.WriteString(markDownReport.String())
 			w.Flush()
 			fmt.Printf("Cowrie Report save to: %s\n\n", outputFilePath)
-
+			err := os.RemoveAll(dst)
+			    if err != nil {
+				fmt.Println("Error deleting directory:", err)
+			    }
 		} else if strings.Contains(strings.ToLower(ziplog), "galah") {
 			var markDownReport strings.Builder
 			outputFilePath := filepath.Join(userHoneyOpsSysReports, fmt.Sprintf("Galah_SummaryReport_%v.md", timestamp))
 			markDownReport.WriteString("# Galah Summary Report\n\n")
-			markDownReport.WriteString(fmt.Sprint("Campaign Name: %s\n", a.CampaignStack))
-			markDownReport.WriteString(fmt.Sprint("Name of Instance: %s\n", ec2Name))
-			markDownReport.WriteString(fmt.Sprint("HoneyPot IP: %s\n", a.Ec2Config[ec2Name].PublicIpAddress))
+			markDownReport.WriteString(fmt.Sprintf("Campaign Name: %s\n", a.CampaignStack))
+			markDownReport.WriteString(fmt.Sprintf("Name of Instance: %s\n", ec2Name))
+			markDownReport.WriteString(fmt.Sprintf("HoneyPot IP: %s\n", a.Ec2Config[ec2Name].PublicIpAddress))
 			markDownReport.WriteString("\n\n")
 
 			limitRows := 20
@@ -1036,12 +1047,12 @@ func (a *AwsPulumiDeployer) GenerateReport(ec2Name string) error {
 			var galahEvents jsonconv.JsonArray
 
 			for _, element := range matches {
-				content, err := fs.ReadFile(tm, element)
+				file, err := os.Open(element)
 				if err != nil {
 					fmt.Sprintf("ReadFile failed: ")
 				}
 
-				scanner := bufio.NewScanner(strings.NewReader(string(content)))
+				scanner := bufio.NewScanner(file)
 
 				for scanner.Scan() {
 					obj := make(jsonconv.JsonObject)
